@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitTrainer AI - Diet & Workout Tracker</title>
+    <!-- Tailwind CSS & Google Fonts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Anuphan', 'sans-serif'],
+                        mono: ['Orbitron', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            DEFAULT: '#CCFF00', // Neon Volt Yellow
+                            dark: '#A6CF00',
+                            glow: 'rgba(204, 255, 0, 0.4)',
+                        },
+                        panel: '#1E293B',
+                        bg: '#0F172A',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Anuphan', sans-serif;
+            background-color: #0F172A;
+            color: #F8FAFC;
+        }
+        .neon-border {
+            box-shadow: 0 0 15px rgba(204, 255, 0, 0.15);
+            border: 1px solid rgba(204, 255, 0, 0.3);
+        }
+        .neon-glow-btn {
+            box-shadow: 0 4px 14px 0 rgba(204, 255, 0, 0.3);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        /* Pulse Animation for Scanning */
+        @keyframes scan {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(100%); }
+            100% { transform: translateY(0); }
+        }
+        .scanning-line {
+            animation: scan 2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-24">
+
+    <!-- Top App Bar -->
+    <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3">
+        <div class="max-w-md mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-brand flex items-center justify-center neon-glow-btn">
+                    <i class="fa-solid fa-dumbbell text-slate-950 text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-md font-bold tracking-wider font-mono text-brand">FITTRAINER AI</h1>
+                    <p class="text-[10px] text-slate-400">PERSONAL RECOMP PROGRAM</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="openSettingsModal()" class="w-9 h-9 rounded-lg bg-slate-800 flex items-center justify-center hover:bg-slate-700 transition">
+                    <i class="fa-solid fa-key text-slate-300 text-sm"></i>
+                </button>
+                <div class="text-right hidden sm:block">
+                    <span class="text-xs text-slate-400 block">อายุ 35 | 173 ซม.</span>
+                    <span class="text-xs text-brand font-semibold block">เป้าหมาย: ลดพุงสร้างกล้าม</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-md mx-auto px-4 mt-4 space-y-6">
+
+        <!-- User Profile Card -->
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-4 border border-slate-700/50 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-brand/10 rounded-full blur-2xl -z-10"></div>
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold text-slate-400 tracking-wider">รูปร่างและเป้าหมายของคุณ</span>
+                <span class="px-2 py-0.5 rounded bg-brand/10 text-brand text-[10px] font-semibold">เวท 4 วัน/สัปดาห์</span>
+            </div>
+            <div class="grid grid-cols-4 gap-2 text-center">
+                <div class="bg-slate-900/60 p-2 rounded-xl border border-slate-800">
+                    <span class="text-[10px] text-slate-400 block">น้ำหนัก</span>
+                    <span class="text-lg font-bold font-mono text-slate-100">70 <span class="text-xs text-slate-400 font-sans">กก.</span></span>
+                </div>
+                <div class="bg-slate-900/60 p-2 rounded-xl border border-slate-800">
+                    <span class="text-[10px] text-slate-400 block">ความสูง</span>
+                    <span class="text-lg font-bold font-mono text-slate-100">173 <span class="text-xs text-slate-400 font-sans">ซม.</span></span>
+                </div>
+                <div class="bg-slate-900/60 p-2 rounded-xl border border-slate-800">
+                    <span class="text-[10px] text-slate-400 block">รอบพุง</span>
+                    <span class="text-lg font-bold font-mono text-red-400">90 <span class="text-xs text-slate-400 font-sans">ซม.</span></span>
+                </div>
+                <div class="bg-slate-900/60 p-2 rounded-xl border border-slate-800">
+                    <span class="text-[10px] text-slate-400 block">TDEE เป้าหมาย</span>
+                    <span class="text-sm font-bold font-mono text-brand block mt-1">~1,950 kcal</span>
+                </div>
+            </div>
+            
+            <!-- Target Macro Progress Bar -->
+            <div class="mt-4 pt-3 border-t border-slate-800 space-y-2">
+                <div class="flex justify-between text-xs text-slate-300">
+                    <span>แคลอรีสะสมวันนี้</span>
+                    <span id="calorie-ratio" class="font-mono">0 / 1950 kcal</span>
+                </div>
+                <div class="w-full bg-slate-950 rounded-full h-2">
+                    <div id="calorie-progress-bar" class="bg-brand h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <div class="grid grid-cols-3 gap-2 pt-1 text-center text-[11px]">
+                    <div class="text-blue-400">โปรตีน: <span id="protein-total" class="font-mono font-bold">0</span>/140g</div>
+                    <div class="text-yellow-400">คาร์บ: <span id="carbs-total" class="font-mono font-bold">0</span>/180g</div>
+                    <div class="text-pink-400">ไขมัน: <span id="fat-total" class="font-mono font-bold">0</span>/55g</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weekly Log Calendar & Dashboard -->
+        <div class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/50">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-bold text-slate-200"><i class="fa-solid fa-calendar-days text-brand mr-2"></i>ปฏิทินความคืบหน้าสัปดาห์นี้</h3>
+                <span class="text-[10px] text-slate-400 font-mono">MAY 2026</span>
+            </div>
+            
+            <div class="grid grid-cols-7 gap-1 text-center mb-4">
+                <div class="text-[10px] text-slate-400 font-semibold">จ</div>
+                <div class="text-[10px] text-slate-400 font-semibold">อ</div>
+                <div class="text-[10px] text-slate-400 font-semibold">พ</div>
+                <div class="text-[10px] text-slate-400 font-semibold">พฤ</div>
+                <div class="text-[10px] text-slate-400 font-semibold">ศ</div>
+                <div class="text-[10px] text-slate-400 font-semibold">ส</div>
+                <div class="text-[10px] text-slate-400 font-semibold">อา</div>
+                
+                <!-- Calendar Day Cells -->
+                <button onclick="selectDay('Monday')" id="cal-Monday" class="p-2 rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-between h-14 hover:border-brand/40 transition">
+                    <span class="text-[10px] font-bold text-slate-300">25</span>
+                    <div class="flex space-x-0.5" id="dots-Monday">
+                        <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+                        <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+                    </div>
+                </button>
+                <button onclick="selectDay('Tuesday')" id="cal-Tuesday" class="p-2 rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-between h-14 hover:border-brand/40 transition">
+                    <span class="text-[10px] font-bold text-slate-300">26</span>
+                    <div class="flex space-x-0.5" id="dots-Tuesday">
+                        <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+                        <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+                    </div>
+                </button>
+                <button onclick="selectDay('Wednesday')" id="cal-Wednesday" class="p-2 rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-between h-14 hover:border-brand/40 transition">
+                    <span class="text-[10px] font-bold text-slate-300">27</span>
+                    <div class="flex space-x-0.5" id="dots-Wednesday">
+                        <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+                        <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+                    </div>
+                </button>
+                <button onclick="selectDay('Thursday')" id="cal-Thursday" class="p-2 rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-between h-14 hover:border-brand/40 transition">
+                    <span class="text-[10px] font-bold text-slate-300 font-bold text-brand">28</span>
+                    <div class="flex space-x-0.5" id="dots-Thursday">
+                        <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+                        <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+                    </div>
+                </button>
+                <button onclick="selectDay('Friday')" id="cal-Friday" class="p-2 rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-between h-14 hover:border-brand/40 transition">
+                    <span class="text-[10px] font-bold text-slate-400">29</span>
+                    <span class="text-[9px] text-slate-500 font-semibold scale-90">REST</span>
+                </button>
+                <button onclick="selectDay('Saturday')" id="cal-Saturday" class="p-2 rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-between h-14 hover:border-brand/40 transition">
+                    <span class="text-[10px] font-bold text-slate-400">30</span>
+                    <span class="text-[9px] text-slate-500 font-semibold scale-90">REST</span>
+                </button>
+                <button onclick="selectDay('Sunday')" id="cal-Sunday" class="p-2 rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-between h-14 hover:border-brand/40 transition">
+                    <span class="text-[10px] font-bold text-slate-400">31</span>
+                    <span class="text-[9px] text-slate-500 font-semibold scale-90">REST</span>
+                </button>
+            </div>
+            
+            <!-- Quick Log Status Checklist for Selected Day -->
+            <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-3">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                    <span class="text-xs font-semibold text-slate-300">สถานะบันทึกวันนี้: <span id="selected-day-lbl" class="text-brand">วันพฤหัสบดี (ขา)</span></span>
+                    <span class="text-[10px] px-2 py-0.5 bg-brand/10 text-brand rounded" id="today-rest-badge">Workout Day</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <label class="flex items-center space-x-2 bg-slate-800/40 p-2 rounded-lg cursor-pointer hover:bg-slate-800 transition">
+                        <input type="checkbox" id="chk-workout" onchange="toggleCheck('workout')" class="rounded border-slate-700 text-brand focus:ring-brand bg-slate-900 w-4 h-4">
+                        <span class="text-slate-300">🏋️‍♂️ เวทเทรนนิ่งครบ</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-slate-800/40 p-2 rounded-lg cursor-pointer hover:bg-slate-800 transition">
+                        <input type="checkbox" id="chk-cardio" onchange="toggleCheck('cardio')" class="rounded border-slate-700 text-brand focus:ring-brand bg-slate-900 w-4 h-4">
+                        <span class="text-slate-300">🚶 เดินชัน 30 นาที</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-slate-800/40 p-2 rounded-lg cursor-pointer hover:bg-slate-800 transition">
+                        <input type="checkbox" id="chk-whey" onchange="toggleCheck('whey')" class="rounded border-slate-700 text-brand focus:ring-brand bg-slate-900 w-4 h-4">
+                        <span class="text-slate-300">🥛 เวย์โปรตีน 1 สกู๊ป</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-slate-800/40 p-2 rounded-lg cursor-pointer hover:bg-slate-800 transition">
+                        <input type="checkbox" id="chk-sleep" onchange="toggleCheck('sleep')" class="rounded border-slate-700 text-brand focus:ring-brand bg-slate-900 w-4 h-4">
+                        <span class="text-slate-300">💤 นอนก่อน 4 ทุ่ม</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wisemeal Diet Scanner Section -->
+        <div class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/50 space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-sm font-bold text-slate-200"><i class="fa-solid fa-camera text-brand mr-2"></i>AI Wisemeal Diet Scanner</h3>
+                <span class="text-xs text-slate-400">ถ่ายรูปคำนวณสารอาหาร</span>
+            </div>
+
+            <!-- Upload Box -->
+            <div class="relative border-2 border-dashed border-slate-700 rounded-xl p-6 hover:border-brand/60 transition bg-slate-900/40 flex flex-col items-center justify-center cursor-pointer overflow-hidden group" id="upload-box" onclick="triggerFileInput()">
+                <input type="file" id="image-input" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+                
+                <div id="upload-placeholder" class="text-center space-y-2">
+                    <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mx-auto group-hover:scale-105 transition duration-300">
+                        <i class="fa-solid fa-cloud-arrow-up text-brand text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-300 font-semibold">คลิกเพื่อ ถ่ายภาพ หรือ อัปโหลดรูปอาหาร</p>
+                        <p class="text-[10px] text-slate-500 mt-1">มื้อเช้า กลางวัน เย็น หรือหลังออกกำลังกาย</p>
+                    </div>
+                </div>
+
+                <!-- Preview Area (hidden initially) -->
+                <div id="image-preview-container" class="hidden absolute inset-0 w-full h-full bg-slate-950 flex items-center justify-center">
+                    <img id="image-preview" src="#" alt="Food Preview" class="w-full h-full object-cover">
+                    <!-- Scanning Overlay Effect -->
+                    <div id="scanning-overlay" class="hidden absolute inset-0 bg-gradient-to-b from-transparent via-brand/25 to-transparent border-y border-brand/50 h-10 w-full scanning-line"></div>
+                </div>
+            </div>
+
+            <!-- Select Meal Target -->
+            <div class="grid grid-cols-4 gap-2">
+                <button onclick="setMealType('breakfast')" id="btn-meal-breakfast" class="py-1.5 px-1 rounded-lg border border-slate-700 text-slate-300 text-xs text-center hover:bg-slate-850 bg-slate-900 focus:border-brand/60">มื้อเช้า</button>
+                <button onclick="setMealType('lunch')" id="btn-meal-lunch" class="py-1.5 px-1 rounded-lg border border-slate-700 text-slate-300 text-xs text-center hover:bg-slate-850 bg-slate-900 focus:border-brand/60">กลางวัน</button>
+                <button onclick="setMealType('dinner')" id="btn-meal-dinner" class="py-1.5 px-1 rounded-lg border border-slate-700 text-slate-300 text-xs text-center hover:bg-slate-850 bg-slate-900 focus:border-brand/60">มื้อเย็น</button>
+                <button onclick="setMealType('whey')" id="btn-meal-whey" class="py-1.5 px-1 rounded-lg border border-slate-700 text-slate-300 text-xs text-center hover:bg-slate-850 bg-slate-900 focus:border-brand/60">เวย์โปรตีน</button>
+            </div>
+
+            <!-- AI Output Analysis Box -->
+            <div id="analysis-output-container" class="hidden bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-3">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                    <span class="text-xs text-brand font-bold" id="analyzed-title">🍗 ไก่อบซอสสมุนไพรและข้าวกล้อง</span>
+                    <button onclick="resetScanner()" class="text-xs text-red-400 hover:text-red-300"><i class="fa-solid fa-trash-can"></i> รีเซ็ต</button>
+                </div>
+                
+                <div class="grid grid-cols-4 gap-2 text-center">
+                    <div class="bg-slate-850 p-2 rounded-lg">
+                        <span class="text-[9px] text-slate-400 block">แคลอรี</span>
+                        <input type="number" id="scanned-kcal" class="bg-transparent text-slate-100 text-center font-mono font-bold text-sm w-full border-b border-slate-800 focus:border-brand outline-none" value="480">
+                        <span class="text-[9px] text-slate-500">kcal</span>
+                    </div>
+                    <div class="bg-slate-850 p-2 rounded-lg">
+                        <span class="text-[9px] text-slate-400 block">โปรตีน</span>
+                        <input type="number" id="scanned-protein" class="bg-transparent text-slate-100 text-center font-mono font-bold text-sm w-full border-b border-slate-800 focus:border-brand outline-none" value="38">
+                        <span class="text-[9px] text-slate-500">g</span>
+                    </div>
+                    <div class="bg-slate-850 p-2 rounded-lg">
+                        <span class="text-[9px] text-slate-400 block">คาร์บ</span>
+                        <input type="number" id="scanned-carbs" class="bg-transparent text-slate-100 text-center font-mono font-bold text-sm w-full border-b border-slate-800 focus:border-brand outline-none" value="52">
+                        <span class="text-[9px] text-slate-500">g</span>
+                    </div>
+                    <div class="bg-slate-850 p-2 rounded-lg">
+                        <span class="text-[9px] text-slate-400 block">ไขมัน</span>
+                        <input type="number" id="scanned-fat" class="bg-transparent text-slate-100 text-center font-mono font-bold text-sm w-full border-b border-slate-800 focus:border-brand outline-none" value="12">
+                        <span class="text-[9px] text-slate-500">g</span>
+                    </div>
+                </div>
+
+                <div class="flex space-x-2 pt-2">
+                    <button onclick="saveMealLog()" class="flex-1 py-2 bg-brand text-slate-950 rounded-xl font-bold text-xs hover:bg-brand-dark transition neon-glow-btn flex items-center justify-center space-x-1">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span>บันทึกเข้า Google Sheets</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Analyze Trigger Button (Visible when image uploaded) -->
+            <button id="btn-analyze" onclick="startAIScan()" class="hidden w-full py-2.5 bg-slate-700 text-white rounded-xl font-bold text-xs hover:bg-slate-650 transition items-center justify-center space-x-2">
+                <i class="fa-solid fa-wand-magic-sparkles text-brand"></i>
+                <span>เริ่มให้ Gemini AI วิเคราะห์ด้วยความละเอียดสูง</span>
+            </button>
+        </div>
+
+        <!-- Workout Routine with 3D Anatomical Highlight -->
+        <div class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/50 space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-sm font-bold text-slate-200"><i class="fa-solid fa-dumbbell text-brand mr-2"></i>ตารางเวท & โฟกัสกล้ามเนื้อ</h3>
+                <span class="text-xs text-brand font-mono font-semibold" id="current-workout-label">วันพฤหัสบดี: ขา (Lower Body)</span>
+            </div>
+
+            <!-- Interactive 3D Anatomical Body Map (SVGs representing Front & Back silhouettes) -->
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800/80 flex justify-around items-center relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-tr from-brand/5 via-transparent to-transparent -z-10"></div>
+                
+                <!-- Front View Anatomy -->
+                <div class="flex flex-col items-center">
+                    <span class="text-[9px] text-slate-500 mb-1">FRONT VIEW</span>
+                    <svg viewBox="0 0 100 220" class="w-20 h-44 filter drop-shadow-[0_0_8px_rgba(255,255,255,0.05)]">
+                        <!-- Head / Neck -->
+                        <path d="M45,20 C45,10 55,10 55,20 C55,25 45,25 45,20 Z" fill="#334155" />
+                        <rect x="48" y="22" width="4" height="6" fill="#334155" />
+                        <!-- Chest (Monday target) -->
+                        <path id="svg-chest-l" d="M32,32 Q41,31 50,37 Q50,55 35,50 Z" fill="#334155" class="transition-all duration-300" />
+                        <path id="svg-chest-r" d="M68,32 Q59,31 50,37 Q50,55 65,50 Z" fill="#334155" class="transition-all duration-300" />
+                        <!-- Shoulders (Tuesday target) -->
+                        <path id="svg-delts-l" d="M22,35 Q28,28 32,32 L34,50 Q24,46 22,35 Z" fill="#334155" class="transition-all duration-300" />
+                        <path id="svg-delts-r" d="M78,35 Q72,28 68,32 L66,50 Q76,46 78,35 Z" fill="#334155" class="transition-all duration-300" />
+                        <!-- Biceps (Tuesday target) -->
+                        <path id="svg-biceps-l" d="M22,50 Q25,65 29,75 L23,75 Q18,60 22,50 Z" fill="#334155" class="transition-all duration-300" />
+                        <path id="svg-biceps-r" d="M78,50 Q75,65 71,75 L77,75 Q82,60 78,50 Z" fill="#334155" class="transition-all duration-300" />
+                        <!-- Abs / Core (Wednesday target) -->
+                        <rect id="svg-abs" x="42" y="55" width="16" height="35" rx="3" fill="#334155" class="transition-all duration-300" />
+                        <!-- Legs / Quads (Thursday target) -->
+                        <path id="svg-quads-l" d="M30,105 Q41,105 47,150 L31,148 Z" fill="#334155" class="transition-all duration-300" />
+                        <path id="svg-quads-r" d="M70,105 Q59,105 53,150 L69,148 Z" fill="#334155" class="transition-all duration-300" />
+                        <!-- Calf / Shins -->
+                        <path d="M32,152 Q43,153 39,200 L33,200 Z" fill="#334155" />
+                        <path d="M68,152 Q57,153 61,200 L67,200 Z" fill="#334155" />
+                    </svg>
+                </div>
+
+                <!-- Back View Anatomy -->
+                <div class="flex flex-col items-center">
+                    <span class="text-[9px] text-slate-500 mb-1">BACK VIEW</span>
+                    <svg viewBox="0 0 100 220" class="w-20 h-44 filter drop-shadow-[0_0_8px_rgba(255,255,255,0.05)]">
+                        <!-- Head / Neck -->
+                        <path d="M45,20 C45,10 55,10 55,20 C55,25 45,25 45,20 Z" fill="#334155" />
+                        <!-- Upper/Mid Back (Wednesday target) -->
+                        <path id="svg-back-upper" d="M30,32 Q50,28 70,32 L65,70 Q50,75 35,70 Z" fill="#334155" class="transition-all duration-300" />
+                        <!-- Lower Back (Wednesday target) -->
+                        <path id="svg-back-lower" d="M35,72 Q50,73 65,72 L60,95 Q50,98 40,95 Z" fill="#334155" class="transition-all duration-300" />
+                        <!-- Triceps (Monday target) -->
+                        <path id="svg-triceps-l" d="M22,48 Q26,60 28,75 L22,75 Q18,60 22,48 Z" fill="#334155" class="transition-all duration-300" />
+                        <path id="svg-triceps-r" d="M78,48 Q74,60 72,75 L78,75 Q82,60 78,48 Z" fill="#334155" class="transition-all duration-300" />
+                        <!-- Glutes (Thursday target) -->
+                        <path id="svg-glutes" d="M32,98 Q50,90 68,98 Q72,120 50,118 Q28,120 32,98 Z" fill="#334155" class="transition-all duration-300" />
+                        <!-- Hamstrings (Thursday target) -->
+                        <path id="svg-hamstrings-l" d="M29,121 Q41,121 44,152 L31,152 Z" fill="#334155" class="transition-all duration-300" />
+                        <path id="svg-hamstrings-r" d="M71,121 Q59,121 56,152 L69,152 Z" fill="#334155" class="transition-all duration-300" />
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Exercises List Container -->
+            <div class="space-y-2.5" id="exercises-list">
+                <!-- Dynamically Populated by JS based on Selected Day -->
+            </div>
+
+            <!-- Special Cardio / Post-Workout Protocol Checklist -->
+            <div class="bg-slate-900/40 p-3 rounded-xl border border-slate-700/50 space-y-2 text-xs">
+                <p class="font-bold text-slate-300">🔥 โปรโตคอลเร่งด่วนหลังซ้อม (เพื่อผลลัพธ์ที่ดีที่สุด):</p>
+                <ul class="space-y-1.5 text-slate-400">
+                    <li class="flex items-start space-x-2">
+                        <i class="fa-solid fa-person-walking text-brand mt-0.5"></i>
+                        <span><strong>Cardio:</strong> เดินบนลู่วิ่งความชัน 6-10% ความเร็ว 4-5 km/h เป็นเวลา 30 นาที (รักษาชีพจรโซน 2-3)</span>
+                    </li>
+                    <li class="flex items-start space-x-2">
+                        <i class="fa-solid fa-mug-hot text-brand mt-0.5"></i>
+                        <span><strong>Post-Workout Nutrition:</strong> ดื่มเวย์โปรตีน 1 สกู๊ป ทันทีภายใน 30 นาทีหลังออกกำลังกายเสร็จ</span>
+                    </li>
+                    <li class="flex items-start space-x-2">
+                        <i class="fa-solid fa-moon text-brand mt-0.5"></i>
+                        <span><strong>Recovery:</strong> เข้านอนก่อน 22.00 น. เพื่อให้ร่างกายหลั่งโกรทฮอร์โมนซ่อมแซมกล้ามเนื้อได้ดีที่สุด</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+       
+
+    </main>
+
+    <!-- Settings & Key Modal -->
+    <div id="settings-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-md font-bold text-brand"><i class="fa-solid fa-key mr-2"></i>ตังค่า API Key & Web App URL</h3>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="text-slate-300 font-semibold block mb-1">Gemini API Key ของคุณ</label>
+                    <input type="password" id="api-key-input" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono outline-none focus:border-brand" placeholder="AIzaSy...">
+                    <p class="text-[10px] text-slate-500 mt-1">สมัครฟรีได้ที่ Google AI Studio (หากไม่มี ระบบจะสแกนอาหารจำลองให้เพื่อทดสอบ)</p>
+                </div>
+
+                <div>
+                    <label class="text-slate-300 font-semibold block mb-1">Google Apps Script Web App URL</label>
+                    <input type="text" id="web-app-url-input" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono outline-none focus:border-brand" placeholder="https://script.google.com/macros/s/.../exec">
+                    <p class="text-[10px] text-slate-500 mt-1">ลิงก์จากการนำไปใช้งานของสคริปต์ Google Sheets สำหรับบันทึกข้อมูลแบบเรียลไทม์</p>
+                </div>
+            </div>
+
+            <div class="flex space-x-2 pt-2">
+                <button onclick="saveSettings()" class="flex-1 py-2 bg-brand text-slate-950 font-bold rounded-xl text-xs hover:bg-brand-dark transition neon-glow-btn">บันทึกค่า</button>
+                <button onclick="closeSettingsModal()" class="flex-1 py-2 bg-slate-800 text-slate-300 font-semibold rounded-xl text-xs hover:bg-slate-700 transition">ยกเลิก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Apps Script Copy Modal -->
+    <div id="gas-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl my-8">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-brand"><i class="fa-solid fa-code mr-2"></i>รหัสสำหรับติดตั้งใน Google Sheets</h3>
+                <button onclick="closeAppsScriptModal()" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-xs text-slate-400">
+                1. เปิดลิงก์ชีตของคุณ ไปที่เมนู <strong>ส่วนขยาย (Extensions)</strong> &gt; <strong>Apps Script</strong><br>
+                2. คัดลอกโค้ดด้านล่างนี้ไปวางทับไฟล์เดิมทั้งหมด บันทึก และกด <strong>การใช้งาน (Deploy)</strong> &gt; <strong>การใช้งานใหม่ (New Deployment)</strong> เลือกประเภทเป็น <strong>เว็บแอป (Web App)</strong><br>
+                3. ตั้งค่าการเข้าถึงเป็น <strong>"ทุกคน" (Anyone)</strong> และนำลิงก์ Web App ที่ได้มาใส่ในช่องตั้งค่าแอปพลิเคชันนี้
+            </p>
+            <textarea readonly class="w-full h-48 bg-slate-950 border border-slate-800 rounded-xl p-2 text-[10px] text-slate-300 font-mono outline-none focus:border-brand" id="gas-code-box">
+function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet();
+  var params = JSON.parse(e.postData.contents);
+  
+  if (params.type === "diet") {
+    var dietSheet = sheet.getSheetByName("Daily_Diet") || sheet.insertSheet("Daily_Diet");
+    if (dietSheet.getLastRow() === 0) {
+      dietSheet.appendRow(["วันที่", "มื้อ", "ชื่ออาหาร", "แคลอรี", "โปรตีน", "คาร์โบไฮเดรต", "ไขมัน"]);
+    }
+    dietSheet.appendRow([
+      new Date(),
+      params.mealType,
+      params.foodName,
+      params.calories,
+      params.protein,
+      params.carbs,
+      params.fat
+    ]);
+  } else if (params.type === "workout") {
+    var workoutSheet = sheet.getSheetByName("Workout_Log") || sheet.insertSheet("Workout_Log");
+    if (workoutSheet.getLastRow() === 0) {
+      workoutSheet.appendRow(["วันที่", "วันออกกำลังกาย", "คาร์ดิโอ", "เวย์โปรตีน", "การนอนก่อน4ทุ่ม", "เวทครบถ้วน"]);
+    }
+    workoutSheet.appendRow([
+      new Date(),
+      params.dayName,
+      params.cardio ? "Completed" : "Incomplete",
+      params.whey ? "Completed" : "Incomplete",
+      params.sleep ? "Completed" : "Incomplete",
+      params.workout ? "Completed" : "Incomplete"
+    ]);
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({status: "success"}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+            </textarea>
+            <button onclick="copyGasCode()" class="w-full py-2 bg-slate-800 text-brand font-semibold rounded-xl text-xs hover:bg-slate-700 transition">
+                <i class="fa-solid fa-copy mr-1"></i>คัดลอกรหัสเข้าคลิปบอร์ด
+            </button>
+        </div>
+    </div>
+
+    <!-- Quick Feedback Toast -->
+    <div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 px-4 py-2.5 bg-slate-800 border border-brand/40 text-brand font-semibold text-xs rounded-xl shadow-lg hidden transition-opacity duration-300 z-50 flex items-center space-x-2">
+        <i class="fa-solid fa-circle-check text-brand"></i>
+        <span id="toast-msg">บันทึกข้อมูลเรียบร้อย</span>
+    </div>
+
+    <script>
+        // State variables
+        let selectedDay = 'Thursday'; // Defaults to Thursday (Legs)
+        let activeMealType = 'breakfast';
+        let isImageUploaded = false;
+        let uploadedBase64 = null;
+        
+        // Target limits & totals for current active tracking day
+        const nutritionGoals = { calories: 1950, protein: 140, carbs: 180, fat: 55 };
+        let loggedTotals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+
+        // Database simulation and checklist state
+        let dailyChecklists = {
+            Monday: { workout: false, cardio: false, whey: false, sleep: false, dietLogged: false },
+            Tuesday: { workout: false, cardio: false, whey: false, sleep: false, dietLogged: false },
+            Wednesday: { workout: false, cardio: false, whey: false, sleep: false, dietLogged: false },
+            Thursday: { workout: true, cardio: true, whey: false, sleep: false, dietLogged: false },
+            Friday: { workout: false, cardio: false, whey: false, sleep: false, dietLogged: false },
+            Saturday: { workout: false, cardio: false, whey: false, sleep: false, dietLogged: false },
+            Sunday: { workout: false, cardio: false, whey: false, sleep: false, dietLogged: false }
+        };
+
+        // Complete 4-Day Hypertrophy Routine Database
+        const workouts = {
+            Monday: {
+                title: 'อก และ หลังแขน (Chest & Triceps Focus)',
+                isRest: false,
+                exercises: [
+                    { name: 'Incline Barbell Bench Press', sets: '4 เซต', reps: '8 - 12 ครั้ง', focus: 'อกส่วนบน (Upper Chest)' },
+                    { name: 'Flat Dumbbell Press', sets: '3 เซต', reps: '10 - 12 ครั้ง', focus: 'อกส่วนกลาง (Mid Chest)' },
+                    { name: 'Cable Fly', sets: '3 เซต', reps: '15 ครั้ง', focus: 'บีบและยืดอกเคเบิล (Chest Squeeze)' },
+                    { name: 'Tricep Overhead Extension', sets: '3 เซต', reps: '12 ครั้ง', focus: 'หลังแขนหัวยาว (Tricep Long Head)' },
+                    { name: 'Tricep Pushdown', sets: '3 เซต', reps: '12 ครั้ง', focus: 'หลังแขนส่วนนอก (Tricep Lateral Head)' }
+                ],
+                activeMuscles: ['svg-chest-l', 'svg-chest-r', 'svg-triceps-l', 'svg-triceps-r']
+            },
+            Tuesday: {
+                title: 'ไหล่ และ หน้าแขน (Shoulders & Biceps)',
+                isRest: false,
+                exercises: [
+                    { name: 'Seated Dumbbell Shoulder Press', sets: '4 เซต', reps: '10 - 12 ครั้ง', focus: 'หัวไหล่รวม (Overall Shoulder)' },
+                    { name: 'Dumbbell Lateral Raise', sets: '4 เซต', reps: '15 ครั้ง', focus: 'หัวไหล่ด้านข้าง (Lateral Delt)' },
+                    { name: 'Reverse Pec Deck Fly', sets: '3 เซต', reps: '15 ครั้ง', focus: 'หัวไหล่ด้านหลัง (Rear Delt)' },
+                    { name: 'Barbell Curl', sets: '3 เซต', reps: '12 ครั้ง', focus: 'หน้าแขนหลัก (Biceps Brachii)' },
+                    { name: 'Hammer Curl', sets: '3 เซต', reps: '12 ครั้ง', focus: 'กล้ามเนื้อแขนท่อนนอก (Brachioradialis)' }
+                ],
+                activeMuscles: ['svg-delts-l', 'svg-delts-r', 'svg-biceps-l', 'svg-biceps-r']
+            },
+            Wednesday: {
+                title: 'หลัง และ หน้าท้อง (Back & Abs Core)',
+                isRest: false,
+                exercises: [
+                    { name: 'Lat Pulldown', sets: '4 เซต', reps: '10 - 12 ครั้ง', focus: 'หลังกว้างปีกนก (Latissimus Dorsi)' },
+                    { name: 'Seated Cable Row', sets: '4 เซต', reps: '10 - 12 ครั้ง', focus: 'หลังหนาและสะบัก (Rhomboids)' },
+                    { name: 'Hyperextension', sets: '3 เซต', reps: '15 ครั้ง', focus: 'หลังส่วนล่างป้องกันบาดเจ็บ (Lower Back)' },
+                    { name: 'Hanging Leg Raises', sets: '3 เซต', reps: 'ยกจนหมดแรง', focus: 'หน้าท้องส่วนล่างพุงด้านล่าง (Lower Abs)' },
+                    { name: 'Cable Crunch', sets: '3 เซต', reps: '15 ครั้ง', focus: 'หน้าท้องส่วนบนเพื่อซิกแพค (Upper Abs)' }
+                ],
+                activeMuscles: ['svg-back-upper', 'svg-back-lower', 'svg-abs']
+            },
+            Thursday: {
+                title: 'ขา และ หน้าขา (Quad & Hamstring Focus)',
+                isRest: false,
+                exercises: [
+                    { name: 'Barbell Squat (or Smith Machine)', sets: '4 เซต', reps: '8 - 12 ครั้ง', focus: 'ต้นขาหน้าและสะโพก (Quads & Glutes)' },
+                    { name: 'Romanian Deadlift (RDL)', sets: '4 เซต', reps: '10 - 12 ครั้ง', focus: 'ต้นขาหลังและหลังล่าง (Hamstrings)' },
+                    { name: 'Leg Press', sets: '3 เซต', reps: '12 ครั้ง', focus: 'เน้นขาหนีบและหน้าขารวม' },
+                    { name: 'Leg Curl', sets: '3 เซต', reps: '15 ครั้ง', focus: 'โฟกัสขูดต้นขาหลังเด่นชัด' },
+                    { name: 'Standing Calf Raise', sets: '4 เซต', reps: '20 ครั้ง', focus: 'กล้ามเนื้อน่อง (Gastrocnemius)' }
+                ],
+                activeMuscles: ['svg-quads-l', 'svg-quads-r', 'svg-glutes', 'svg-hamstrings-l', 'svg-hamstrings-r']
+            },
+            Friday: { title: 'วันพักผ่อน (Rest Day)', isRest: true, exercises: [], activeMuscles: [] },
+            Saturday: { title: 'วันพักผ่อน (Rest Day)', isRest: true, exercises: [], activeMuscles: [] },
+            Sunday: { title: 'วันพักผ่อน (Rest Day)', isRest: true, exercises: [], activeMuscles: [] }
+        };
+
+        // App Load Initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            loadSavedSettings();
+            updateDashboardUI();
+            selectDay(selectedDay);
+        });
+
+        // Trigger input file selection
+        function triggerFileInput() {
+            document.getElementById('image-input').click();
+        }
+
+        // Handle Image Upload and Conversion to Base64
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                uploadedBase64 = e.target.result.split(',')[1];
+                
+                // Show in UI
+                document.getElementById('image-preview').src = e.target.result;
+                document.getElementById('image-preview-container').classList.remove('hidden');
+                document.getElementById('upload-placeholder').classList.add('hidden');
+                document.getElementById('btn-analyze').classList.remove('hidden');
+                document.getElementById('btn-analyze').classList.add('flex');
+                isImageUploaded = true;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Set meal type
+        function setMealType(type) {
+            activeMealType = type;
+            const meals = ['breakfast', 'lunch', 'dinner', 'whey'];
+            meals.forEach(m => {
+                const btn = document.getElementById(`btn-meal-${m}`);
+                if (m === type) {
+                    btn.className = "py-1.5 px-1 rounded-lg border border-brand bg-brand/10 text-brand text-xs text-center font-bold";
+                } else {
+                    btn.className = "py-1.5 px-1 rounded-lg border border-slate-700 text-slate-300 text-xs text-center hover:bg-slate-850 bg-slate-900 focus:border-brand/60";
+                }
+            });
+        }
+
+        // Execute AI Scan of Food
+        async function startAIScan() {
+            if (!isImageUploaded) return;
+            
+            // Show scanning overlay animation
+            document.getElementById('scanning-overlay').classList.remove('hidden');
+            
+            const apiKey = localStorage.getItem('gemini_api_key') || '';
+            
+            if (apiKey) {
+                // REAL MODE: Make live fetch call to Gemini API
+                try {
+                    const prompt = `คุณคือผู้เชี่ยวชาญด้านโภชนาการและการสร้างกล้ามเนื้อสไตล์ Wisemeal คํานวณสารอาหารหลักจากรูปภาพอาหารไทยหรือเวย์นี้อย่างแม่นยำที่สุด สำหรับหนุ่มอายุ 35 สูง 173 น้ำหนัก 70 รอบพุง 90 ให้ออกมาเป็นรูปแบบ JSON เท่านั้น ห้ามเขียนเกริ่นนำหรืออธิบายอื่นๆ รูปแบบคือ: {"food_name":"...", "calories": 0, "protein": 0, "carbs": 0, "fat": 0}`;
+                    
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [
+                                    { text: prompt },
+                                    { inlineData: { mimeType: "image/jpeg", data: uploadedBase64 } }
+                                ]
+                            }]
+                        })
+                    });
+
+                    const data = await response.json();
+                    let responseText = data.candidates[0].content.parts[0].text;
+                    
+                    // Sanitize JSON response text
+                    responseText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
+                    const result = JSON.parse(responseText);
+                    
+                    populateScannedResults(result.food_name, result.calories, result.protein, result.carbs, result.fat);
+                } catch (error) {
+                    console.error("API Error: ", error);
+                    showToast("ไม่สามารถเรียก Gemini API ได้ ระบบจะสแกนโหมดทดสอบจำลองให้");
+                    runSimulatedScan();
+                }
+            } else {
+                // SIMULATION MODE (No API Key)
+                runSimulatedScan();
+            }
+        }
+
+        // Run high fidelity simulated scan based on Meal Type
+        function runSimulatedScan() {
+            setTimeout(() => {
+                let simulatedResult = {};
+                if (activeMealType === 'breakfast') {
+                    simulatedResult = { name: "ไข่ต้ม 2 ฟอง + ข้าวเหนียวอกไก่ย่างฉีก", kcal: 420, protein: 32, carbs: 45, fat: 12 };
+                } else if (activeMealType === 'lunch') {
+                    simulatedResult = { name: "กะเพราอกไก่สับข้าวกล้อง + ไข่ดาวไร้น้ำมัน", kcal: 530, protein: 40, carbs: 60, fat: 13 };
+                } else if (activeMealType === 'dinner') {
+                    simulatedResult = { name: "ปลากระพงย่างเกลือ + ผักลวก + ข้าวไรซ์เบอร์รี่", kcal: 390, protein: 35, carbs: 40, fat: 8 };
+                } else {
+                    simulatedResult = { name: "Whey Protein Isolate 1 Scoop", kcal: 120, protein: 25, carbs: 2, fat: 1 };
+                }
+                
+                populateScannedResults(simulatedResult.name, simulatedResult.kcal, simulatedResult.protein, simulatedResult.carbs, simulatedResult.fat);
+            }, 1800);
+        }
+
+        // Populate and show Scan Analysis card
+        function populateScannedResults(name, kcal, protein, carbs, fat) {
+            document.getElementById('scanning-overlay').classList.add('hidden');
+            document.getElementById('analyzed-title').innerText = `🥗 วิเคราะห์: ${name}`;
+            document.getElementById('scanned-kcal').value = kcal;
+            document.getElementById('scanned-protein').value = protein;
+            document.getElementById('scanned-carbs').value = carbs;
+            document.getElementById('scanned-fat').value = fat;
+            
+            document.getElementById('btn-analyze').classList.add('hidden');
+            document.getElementById('analysis-output-container').classList.remove('hidden');
+            showToast("สแกนภาพและคำนวณแคลอรีเรียบร้อย!");
+        }
+
+        // Save scanned values into active state & mock/real sheet
+        async function saveMealLog() {
+            const kcal = parseInt(document.getElementById('scanned-kcal').value) || 0;
+            const protein = parseInt(document.getElementById('scanned-protein').value) || 0;
+            const carbs = parseInt(document.getElementById('scanned-carbs').value) || 0;
+            const fat = parseInt(document.getElementById('scanned-fat').value) || 0;
+            const foodName = document.getElementById('analyzed-title').innerText.replace("🥗 วิเคราะห์: ", "");
+
+            // Update local totals
+            loggedTotals.calories += kcal;
+            loggedTotals.protein += protein;
+            loggedTotals.carbs += carbs;
+            loggedTotals.fat += fat;
+
+            // Trigger sync to Google Sheets if Web App URL exists
+            const webAppUrl = localStorage.getItem('gas_web_app_url');
+            if (webAppUrl) {
+                try {
+                    await fetch(webAppUrl, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            type: 'diet',
+                            mealType: activeMealType,
+                            foodName: foodName,
+                            calories: kcal,
+                            protein: protein,
+                            carbs: carbs,
+                            fat: fat
+                        })
+                    });
+                } catch (err) {
+                    console.log("Sheet Sync error, standard save used.");
+                }
+            }
+
+            dailyChecklists[selectedDay].dietLogged = true;
+            if (activeMealType === 'whey') {
+                document.getElementById('chk-whey').checked = true;
+                dailyChecklists[selectedDay].whey = true;
+            }
+
+            updateDashboardUI();
+            resetScanner();
+            showToast("เพิ่มเมนูอาหารลงตาราง & ซิงก์เรียบร้อย!");
+        }
+
+        // Reset Scanner View
+        function resetScanner() {
+            document.getElementById('image-preview-container').classList.add('hidden');
+            document.getElementById('upload-placeholder').classList.remove('hidden');
+            document.getElementById('btn-analyze').classList.add('hidden');
+            document.getElementById('analysis-output-container').classList.add('hidden');
+            document.getElementById('image-input').value = "";
+            isImageUploaded = false;
+            uploadedBase64 = null;
+        }
+
+        // Select calendar day
+        function selectDay(day) {
+            selectedDay = day;
+            
+            // Loop and highlight active day in calendar
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            days.forEach(d => {
+                const element = document.getElementById(`cal-${d}`);
+                if (d === day) {
+                    element.classList.add('border-brand', 'ring-1', 'ring-brand/40');
+                } else {
+                    element.classList.remove('border-brand', 'ring-1', 'ring-brand/40');
+                }
+            });
+
+            // Update day label
+            const workoutInfo = workouts[day];
+            const displayLabel = day === 'Monday' ? 'วันจันทร์ (อก/หลังแขน)' :
+                                 day === 'Tuesday' ? 'วันอังคาร (ไหล่/หน้าแขน)' :
+                                 day === 'Wednesday' ? 'วันพุธ (หลัง/ท้อง)' :
+                                 day === 'Thursday' ? 'วันพฤหัสบดี (ขา)' : 'วันพักผ่อน (Rest Day)';
+            
+            document.getElementById('selected-day-lbl').innerText = displayLabel;
+            document.getElementById('current-workout-label').innerText = workoutInfo.title;
+
+            // Update Rest Day Badge
+            const badge = document.getElementById('today-rest-badge');
+            if (workoutInfo.isRest) {
+                badge.innerText = "Rest Day";
+                badge.className = "px-2 py-0.5 bg-slate-700 text-slate-300 rounded text-[10px]";
+            } else {
+                badge.innerText = "Workout Day";
+                badge.className = "px-2 py-0.5 bg-brand/10 text-brand rounded text-[10px] font-semibold";
+            }
+
+            // Fill checklist values
+            document.getElementById('chk-workout').checked = dailyChecklists[day].workout;
+            document.getElementById('chk-cardio').checked = dailyChecklists[day].cardio;
+            document.getElementById('chk-whey').checked = dailyChecklists[day].whey;
+            document.getElementById('chk-sleep').checked = dailyChecklists[day].sleep;
+
+            // Redraw 3D Muscles highlight
+            highlightAnatomyMuscles(workoutInfo.activeMuscles);
+
+            // Populating exercise list
+            populateExercises(workoutInfo.exercises);
+        }
+
+        // Highlight active muscles on Vector SVG
+        function highlightAnatomyMuscles(activeMusclesArray) {
+            // Reset all muscles to slate-700
+            const allMuscleIds = [
+                'svg-chest-l', 'svg-chest-r', 'svg-delts-l', 'svg-delts-r', 
+                'svg-biceps-l', 'svg-biceps-r', 'svg-abs', 'svg-quads-l', 
+                'svg-quads-r', 'svg-back-upper', 'svg-back-lower', 'svg-triceps-l', 
+                'svg-triceps-r', 'svg-glutes', 'svg-hamstrings-l', 'svg-hamstrings-r'
+            ];
+            
+            allMuscleIds.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.setAttribute('fill', '#334155');
+                    element.style.filter = 'none';
+                }
+            });
+
+            // Set active muscles neon volt glow
+            activeMusclesArray.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.setAttribute('fill', '#CCFF00');
+                    element.style.filter = 'drop-shadow(0 0 6px #CCFF00)';
+                }
+            });
+        }
+
+        // Populate Exercises Cards dynamically with custom details
+        function populateExercises(exercises) {
+            const container = document.getElementById('exercises-list');
+            container.innerHTML = "";
+
+            if (exercises.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center bg-slate-900/40 rounded-xl border border-slate-800">
+                        <i class="fa-solid fa-mug-hot text-brand text-2xl mb-2"></i>
+                        <p class="text-xs text-slate-300">วันนี้เป็นวันพักผ่อนอย่างเต็มที่!</p>
+                        <p class="text-[10px] text-slate-500 mt-1">ให้กล้ามเนื้อได้ซ่อมแซมและเติบโตเพื่อซ้อมมัดใหม่พรุ่งนี้</p>
+                    </div>
+                `;
+                return;
+            }
+
+            exercises.forEach((ex, idx) => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-900/80 p-3 rounded-xl border border-slate-800 flex justify-between items-center hover:bg-slate-850 transition";
+                card.innerHTML = `
+                    <div class="space-y-1">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-5 h-5 rounded-full bg-brand/10 text-brand text-[10px] flex items-center justify-center font-bold">${idx + 1}</span>
+                            <span class="text-xs font-bold text-slate-200">${ex.name}</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 pl-7"><i class="fa-solid fa-bullseye text-brand/80 mr-1"></i>โฟกัส: ${ex.focus}</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[11px] font-mono font-bold text-brand block">${ex.sets}</span>
+                        <span class="text-[10px] text-slate-400 block">${ex.reps}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Toggle checklist checks
+        async function toggleCheck(item) {
+            const val = document.getElementById(`chk-${item}`).checked;
+            dailyChecklists[selectedDay][item] = val;
+            
+            // If checking whey from workout protocol, update dietary too
+            if (item === 'whey' && val) {
+                loggedTotals.protein += 25;
+                loggedTotals.calories += 120;
+                updateDashboardUI();
+            }
+
+            updateDashboardUI();
+
+            // Sync with Sheets
+            const webAppUrl = localStorage.getItem('gas_web_app_url');
+            if (webAppUrl) {
+                try {
+                    await fetch(webAppUrl, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            type: 'workout',
+                            dayName: selectedDay,
+                            cardio: dailyChecklists[selectedDay].cardio,
+                            whey: dailyChecklists[selectedDay].whey,
+                            sleep: dailyChecklists[selectedDay].sleep,
+                            workout: dailyChecklists[selectedDay].workout
+                        })
+                    });
+                } catch(err) {
+                    console.log("No sheet sync target reachable.");
+                }
+            }
+            
+            showToast("อัปเดตสถานะเป้าหมายแล้ว!");
+        }
+
+        // Update Dashboard totals and active icons
+        function updateDashboardUI() {
+            // Update macros and targets display
+            document.getElementById('protein-total').innerText = loggedTotals.protein;
+            document.getElementById('carbs-total').innerText = loggedTotals.carbs;
+            document.getElementById('fat-total').innerText = loggedTotals.fat;
+            document.getElementById('calorie-ratio').innerText = `${loggedTotals.calories} / ${nutritionGoals.calories} kcal`;
+
+            const rawPercent = (loggedTotals.calories / nutritionGoals.calories) * 100;
+            const percent = Math.min(Math.round(rawPercent), 100);
+            document.getElementById('calorie-progress-bar').style.width = `${percent}%`;
+
+            // Refresh calendar day dots representing diet + workout completion
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            days.forEach(d => {
+                const dayStatus = dailyChecklists[d];
+                const dotContainer = document.getElementById(`dots-${d}`);
+                
+                if (dotContainer) {
+                    dotContainer.innerHTML = "";
+                    // Workout dot
+                    const wDot = document.createElement('span');
+                    wDot.className = `w-1.5 h-1.5 rounded-full ${dayStatus.workout ? 'bg-brand' : 'bg-slate-600'}`;
+                    // Diet dot
+                    const dDot = document.createElement('span');
+                    dDot.className = `w-1.5 h-1.5 rounded-full ${dayStatus.dietLogged ? 'bg-blue-400' : 'bg-slate-600'}`;
+                    
+                    dotContainer.appendChild(wDot);
+                    dotContainer.appendChild(dDot);
+                }
+            });
+        }
+
+        // Show Toast Notifications
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = message;
+            
+            toast.classList.remove('hidden');
+            toast.classList.add('flex');
+            toast.style.opacity = '1';
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                    toast.classList.remove('flex');
+                }, 300);
+            }, 2500);
+        }
+
+        // Save Settings to LocalStorage
+        function saveSettings() {
+            const apiKey = document.getElementById('api-key-input').value.trim();
+            const webAppUrl = document.getElementById('web-app-url-input').value.trim();
+
+            localStorage.setItem('gemini_api_key', apiKey);
+            localStorage.setItem('gas_web_app_url', webAppUrl);
+            
+            closeSettingsModal();
+            showToast("บันทึกการตั้งค่าเรียบร้อยแล้ว!");
+        }
+
+        // Load saved settings
+        function loadSavedSettings() {
+            document.getElementById('api-key-input').value = localStorage.getItem('gemini_api_key') || '';
+            document.getElementById('web-app-url-input').value = localStorage.getItem('gas_web_app_url') || '';
+        }
+
+        // Modal triggers
+        function openSettingsModal() { document.getElementById('settings-modal').classList.remove('hidden'); }
+        function closeSettingsModal() { document.getElementById('settings-modal').classList.add('hidden'); }
+        function openAppsScriptModal() { document.getElementById('gas-modal').classList.remove('hidden'); }
+        function closeAppsScriptModal() { document.getElementById('gas-modal').classList.add('hidden'); }
+        
+        function copyGasCode() {
+            const copyText = document.getElementById("gas-code-box");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(copyText.value);
+            showToast("คัดลอกรหัสเรียบร้อยแล้ว!");
+        }
+    </script>
+</body>
+</html>
